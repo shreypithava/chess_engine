@@ -2,3 +2,4 @@
 Chess.iml
 piece.py
 fen.txt
+__pycache__/

@@ -6,7 +6,7 @@ if __name__ == '__main__':
     board = Board(board_fen)
     # board.make_move('a4')
     # board.make_move('a5')
-    board.make_move('Ra3')
+    board.make_move('Be7')
     # board.make_move('c5')
     # board.make_move('Ra1')
     board.print_board()

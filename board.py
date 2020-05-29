@@ -26,14 +26,9 @@ class Board(object):
     def return_color_pieces(self, color: str):
         counter = 0
         fen = self.__fen.split()[0]
-        if color == 'w':
-            for letter in fen:
-                if letter.isupper():  # uppercase for white
-                    counter += 1
-        else:
-            for letter in fen:
-                if letter.islower():  # lowercase for black
-                    counter += 1
+        for letter in fen:
+            if letter.isupper() if color == 'w' else letter.islower():
+                counter += 1
         return counter
 
     def __put_fen_in_board_list(self):
@@ -77,7 +72,7 @@ class Board(object):
             if self.__knight_move(move, p):
                 move_legal = True
             else:
-                print("Can't play that")
+                print("Can't play that N")
         else:  # king move
             p = 'K' if self.__is_whites_turn else 'k'
             if self.__king_move(move, p):
@@ -150,7 +145,56 @@ class Board(object):
         return False
 
     def __bishop_move(self, move, p):
-        print(self)
+        al, nm = ord(move[1]) - 97, 8 - int(move[2])
+
+        # find piece up left
+        t_al, t_nm = al, nm
+        while t_al >= 0 and t_nm >= 0:
+            if self.__board_list[t_nm][t_al] == p:
+                self.__board_list[nm][al] = p
+                self.__board_list[t_nm][t_al] = '.'
+                return True
+            if self.__board_list[t_nm][t_al] != '.':
+                break
+            t_al -= 1
+            t_nm -= 1
+
+        # find piece up right
+        t_al, t_nm = al, nm
+        while t_al <= 7 and t_nm >= 0:
+            if self.__board_list[t_nm][t_al] == p:
+                self.__board_list[nm][al] = p
+                self.__board_list[t_nm][t_al] = '.'
+                return True
+            if self.__board_list[t_nm][t_al] != '.':
+                break
+            t_al += 1
+            t_nm -= 1
+
+        # find piece down right
+        t_al, t_nm = al, nm
+        while t_al <= 7 and t_nm <= 7:
+            if self.__board_list[t_nm][t_al] == p:
+                self.__board_list[nm][al] = p
+                self.__board_list[t_nm][t_al] = '.'
+                return True
+            if self.__board_list[t_nm][t_al] != '.':
+                break
+            t_al += 1
+            t_nm += 1
+
+        # find piece down left
+        t_al, t_nm = al, nm
+        while t_al >= 0 and t_nm <= 7:
+            if self.__board_list[t_nm][t_al] == p:
+                self.__board_list[nm][al] = p
+                self.__board_list[t_nm][t_al] = '.'
+                return True
+            if self.__board_list[t_nm][t_al] != '.':
+                break
+            t_al -= 1
+            t_nm += 1
+
         return False
 
     def __knight_move(self, move, p):

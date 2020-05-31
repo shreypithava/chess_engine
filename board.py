@@ -61,21 +61,15 @@ class Board(object):
                 move_legal = True
             else:
                 print("Can't play that B")
-        elif move[0] == 'Q':  # queen move
-            p = 'Q' if self.__is_whites_turn else 'q'
-            if self.__queen_move(move, p):
-                move_legal = True
-            else:
-                print("Can't play that Q")
         elif move[0] == 'N':  # knight move
             p = 'N' if self.__is_whites_turn else 'n'
             if self.__knight_move(move, p):
                 move_legal = True
             else:
                 print("Can't play that N")
-        else:  # king move
-            p = 'K' if self.__is_whites_turn else 'k'
-            if self.__king_move(move, p):
+        else:  # king or queen move
+            p = move[0].upper() if self.__is_whites_turn else move[0].lower()
+            if self.__king_queen_move(move, p):
                 move_legal = True
             else:
                 print("Can't play that K")
@@ -112,82 +106,82 @@ class Board(object):
                 return True
         return False
 
-    def __rook_move(self, move, p):
+    def __rook_move(self, move, p, is_king=False):
         al, nm = ord(move[1]) - 97, 8 - int(move[2])
 
-        for idx in range(nm, 8):  # find piece downwards
+        for idx in range(nm + 1, 8):  # find piece downwards
             if self.__board_list[idx][al] == p:
                 self.__board_list[idx][al] = '.'
                 self.__board_list[nm][al] = p
                 return True
-            if self.__board_list[idx][al] != '.':
+            if self.__board_list[idx][al] != '.' or is_king:
                 break
 
-        for idx in range(nm, -1, -1):  # find piece upwards
+        for idx in range(nm - 1, -1, -1):  # find piece upwards
             if self.__board_list[idx][al] == p:
                 self.__board_list[idx][al] = '.'
                 self.__board_list[nm][al] = p
                 return True
-            if self.__board_list[idx][al] != '.':
+            if self.__board_list[idx][al] != '.' or is_king:
                 break
 
-        for idx in range(al, -1, -1):  # find piece leftwards
+        for idx in range(al - 1, -1, -1):  # find piece leftwards
             if self.__board_list[nm][idx] == p:
                 self.__board_list[nm][idx] = '.'
                 self.__board_list[nm][al] = p
                 return True
-            if self.__board_list[nm][idx] != '.':
+            if self.__board_list[nm][idx] != '.' or is_king:
                 break
 
-        for idx in range(al, 8):  # find piece rightwards
+        for idx in range(al + 1, 8):  # find piece rightwards
             if self.__board_list[nm][idx] == p:
                 self.__board_list[nm][idx] = '.'
                 self.__board_list[nm][al] = p
                 return True
-            if self.__board_list[nm][idx] != '.':
+            if self.__board_list[nm][idx] != '.' or is_king:
                 break
 
         return False
 
-    def __bishop_move(self, move, p):
+    def __bishop_move(self, move, p, is_king=False):
         al, nm = ord(move[1]) - 97, 8 - int(move[2])
 
         # find piece up left
-        t_al, t_nm = al, nm
+        t_al, t_nm = al - 1, nm - 1
         while t_al >= 0 and t_nm >= 0:
             if self.__helper(al, nm, t_al, t_nm, p):
                 return True
-            if self.__board_list[t_nm][t_al] != '.':
+            if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
             t_al -= 1
             t_nm -= 1
 
         # find piece up right
-        t_al, t_nm = al, nm
+        t_al, t_nm = al + 1, nm - 1
         while t_al <= 7 and t_nm >= 0:
             if self.__helper(al, nm, t_al, t_nm, p):
                 return True
-            if self.__board_list[t_nm][t_al] != '.':
+            if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
             t_al += 1
             t_nm -= 1
 
         # find piece down right
-        t_al, t_nm = al, nm
+        t_al, t_nm = al + 1, nm + 1
         while t_al <= 7 and t_nm <= 7:
             if self.__helper(al, nm, t_al, t_nm, p):
                 return True
-            if self.__board_list[t_nm][t_al] != '.':
+            if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
             t_al += 1
             t_nm += 1
 
         # find piece down left
-        t_al, t_nm = al, nm
+        t_al, t_nm = al - 1, nm + 1
         while t_al >= 0 and t_nm <= 7:
             if self.__helper(al, nm, t_al, t_nm, p):
                 return True
-            if self.__board_list[t_nm][t_al] != '.':
+            if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
             t_al -= 1
             t_nm += 1
@@ -202,14 +196,50 @@ class Board(object):
         return False
 
     def __knight_move(self, move, p):
-        print(self)
+        al, nm = ord(move[1]) - 97, 8 - int(move[2])
+        # up
+        if nm - 2 >= 0:
+            if al - 1 >= 0 and self.__board_list[nm - 2][al - 1] == p:
+                self.__board_list[nm - 2][al - 1] = '.'
+                self.__board_list[nm][al] = p
+                return True
+            if al + 1 <= 7 and self.__board_list[nm - 2][al + 1] == p:
+                self.__board_list[nm - 2][al + 1] = '.'
+                self.__board_list[nm][al] = p
+                return True
+        # down
+        if nm + 2 <= 7:
+            if al - 1 >= 0 and self.__board_list[nm + 2][al - 1] == p:
+                self.__board_list[nm + 2][al - 1] = '.'
+                self.__board_list[nm][al] = p
+                return True
+            if al + 1 <= 7 and self.__board_list[nm + 2][al + 1] == p:
+                self.__board_list[nm + 2][al + 1] = '.'
+                self.__board_list[nm][al] = p
+                return True
+        # left
+        if al - 2 >= 0:
+            if nm - 1 >= 0 and self.__board_list[nm - 1][al - 2] == p:
+                self.__board_list[nm - 1][al - 2] = '.'
+                self.__board_list[nm][al] = p
+                return True
+            if nm + 1 <= 7 and self.__board_list[nm + 1][al - 2] == p:
+                self.__board_list[nm + 1][al - 2] = '.'
+                self.__board_list[nm][al] = p
+                return True
+        # right
+        if al + 2 <= 7:
+            if nm - 1 >= 0 and self.__board_list[nm - 1][al + 2] == p:
+                self.__board_list[nm - 1][al + 2] = '.'
+                self.__board_list[nm][al] = p
+                return True
+            if nm + 1 <= 7 and self.__board_list[nm + 1][al + 2] == p:
+                self.__board_list[nm + 1][al + 2] = '.'
+                self.__board_list[nm][al] = p
+                return True
         return False
 
-    def __queen_move(self, move, p):
-        if self.__bishop_move(move, p):
+    def __king_queen_move(self, move, p):
+        if self.__bishop_move(move, p, p.upper() == 'K'):
             return True
-        return self.__rook_move(move, p)
-
-    def __king_move(self, move, p):
-        print(self)
-        return False
+        return self.__rook_move(move, p, p.upper() == 'K')

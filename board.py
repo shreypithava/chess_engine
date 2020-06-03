@@ -82,9 +82,19 @@ class Board(object):
             self.__is_w_turn = not self.__is_w_turn
         return move_legal
 
-    def __pawn_move(self, move):
+    def __pawn_move(self, move, for_check=False):
         al, nm = ord(move[0]) - 97, 8 - int(move[1])
         if self.__is_w_turn:
+            if for_check:
+                if nm <= 5:
+                    if al != 0 and nm != 7:
+                        return self.__board_list[nm + 1][al - 1] == 'P' or \
+                               self.__board_list[nm + 1][al + 1] == 'P'
+                    if al == 0:
+                        return self.__board_list[nm + 1][al + 1] == 'P'
+                    if nm == 7:
+                        return self.__board_list[nm + 1][al - 1] == 'P'
+                return False
             if nm == 4 and \
                     self.__board_list[6][al] == 'P' and \
                     self.__board_list[5][al] == '.' and \
@@ -98,6 +108,16 @@ class Board(object):
                 self.__board_list[nm][al] = 'P'
                 return True
         else:
+            if for_check:
+                if nm >= 2:
+                    if al != 0 and nm != 7:
+                        return self.__board_list[nm - 1][al - 1] == 'P' or \
+                               self.__board_list[nm - 1][al + 1] == 'P'
+                    if al == 0:
+                        return self.__board_list[nm - 1][al + 1] == 'P'
+                    if nm == 7:
+                        return self.__board_list[nm - 1][al - 1] == 'P'
+                return False
             if nm == 3 and \
                     self.__board_list[1][al] == 'p' and \
                     self.__board_list[2][al] == '.' and \
@@ -277,7 +297,7 @@ class Board(object):
         if self.__king_queen_move(position, 'Q' if self.__is_w_turn else 'q',
                                   True):
             return True
-        return False
+        return self.__pawn_move(position, True)
 
     def __find_king(self):
         k = 'k' if self.__is_w_turn else 'K'

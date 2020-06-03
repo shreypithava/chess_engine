@@ -4,7 +4,41 @@ class Board(object):
         self.__board_list: list[list] = []
         self.__is_w_turn = self.__fen.split()[1] == 'w'
         self.__check_list = [False, False]
-        self.__put_fen_in_board_list()
+        self.__put_fen_in_board_list(self.__fen.split()[0])
+
+    def __put_fen_in_board_list(self, fen):
+        self.__board_list = []
+        for idx, row in enumerate(fen.split('/')):
+            self.__board_list.append([])
+            for letter in row:
+                if letter.isdigit():
+                    for _ in range(int(letter)):
+                        self.__board_list[idx].append('.')
+                else:
+                    self.__board_list[idx].append(letter)
+
+    def __put_board_in_fen(self):
+        fen = ''
+        counter = 0
+        for row in range(8):
+            for col in range(8):
+                if self.__board_list[row][col] != '.':
+                    if counter > 0:
+                        fen += str(counter)
+                        counter = 0
+                    fen += self.__board_list[row][col]
+                else:
+                    counter += 1
+            if counter > 0:
+                fen += str(counter)
+                counter = 0
+            if row != 7:
+                fen += '/'
+        full_fen = [fen] + self.__fen.split()[1:]
+        self.__fen = ' '.join(full_fen)
+
+    def print_fen(self):
+        print(self.__fen.split()[0])
 
     def print_board(self):
         for idx, row in enumerate(self.__board_list):
@@ -31,17 +65,6 @@ class Board(object):
             if letter.isupper() if color == 'w' else letter.islower():
                 counter += 1
         return counter
-
-    def __put_fen_in_board_list(self):
-        fen = self.__fen.split()[0]
-        for idx, row in enumerate(fen.split('/')):
-            self.__board_list.append([])
-            for letter in row:
-                if letter.isdigit():
-                    for _ in range(int(letter)):
-                        self.__board_list[idx].append('.')
-                else:
-                    self.__board_list[idx].append(letter)
 
     def make_move(self, move: str):
         move_legal = False
@@ -75,10 +98,14 @@ class Board(object):
             else:
                 print("Can't play that K")
         if move_legal:
+            if self.__if_getting_checked():
+                self.__put_fen_in_board_list(self.__fen.split()[0])
+                return False
             if self.__checked():
                 self.__check_list[1 if self.__is_w_turn else 0] = True
                 print('{} checked'.format('Black' if self.__is_w_turn
                                           else 'White'))
+            self.__put_board_in_fen()
             self.__is_w_turn = not self.__is_w_turn
         return move_legal
 
@@ -307,3 +334,9 @@ class Board(object):
                 if k == self.__board_list[num][al]:
                     return '{}{}'.format(chr(al + 97), 8 - num)
         return ''
+
+    def __if_getting_checked(self):
+        self.__is_w_turn = not self.__is_w_turn
+        is_still_checked = self.__checked()
+        self.__is_w_turn = not self.__is_w_turn
+        return is_still_checked

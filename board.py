@@ -75,42 +75,51 @@ class Board(object):
                 print("Can't play that P")
         elif move[0] == 'R':  # rook move
             p = 'R' if self.__is_w_turn else 'r'
-            if self.__rook_move(move[1:], p):
+            if self.__rook_move(move[2 if 'x' in move else 1:], p,
+                                for_kill='x' in move):
                 move_legal = True
             else:
                 print("Can't play that R")
         elif move[0] == 'B':  # bishop move
             p = 'B' if self.__is_w_turn else 'b'
-            if self.__bishop_move(move[1:], p):
+            if self.__bishop_move(move[2 if 'x' in move else 1:], p,
+                                  for_kill='x' in move):
                 move_legal = True
             else:
                 print("Can't play that B")
         elif move[0] == 'N':  # knight move
             p = 'N' if self.__is_w_turn else 'n'
-            if self.__knight_move(move[1:], p):
+            if self.__knight_move(move[2 if 'x' in move else 1:], p,
+                                  for_kill='x' in move):
                 move_legal = True
             else:
                 print("Can't play that N")
         else:  # king or queen move
             p = move[0].upper() if self.__is_w_turn else move[0].lower()
-            if self.__king_queen_move(move[1:], p):
+            if self.__king_queen_move(move[2 if 'x' in move else 1:], p,
+                                      for_kill='x' in move):
                 move_legal = True
             else:
-                print("Can't play that K")
+                print("Can't play that {}".format(move[0]))
         if move_legal:
             if self.__if_getting_checked():
                 self.__put_fen_in_board_list(self.__fen.split()[0])
                 return False
             if self.__checked():
-                self.__check_list[1 if self.__is_w_turn else 0] = True
-                print('{} checked'.format('Black' if self.__is_w_turn
-                                          else 'White'))
+                if self.__checkmate():
+                    print('Checkmate, Game over')
+                else:
+                    self.__check_list[1 if self.__is_w_turn else 0] = True
+                    print('{} checked'.format('Black' if self.__is_w_turn
+                                              else 'White'))
             self.__put_board_in_fen()
             self.__is_w_turn = not self.__is_w_turn
         return move_legal
 
     def __pawn_move(self, move, for_check=False):
-        al, nm = ord(move[0]) - 97, 8 - int(move[1])
+        al, nm = ord(move[2 if len(move) == 4 else 0]) - 97, \
+                 8 - int(move[3 if len(move) == 4 else 1])
+        # TODO: start here, blocks covered when opposite king moves
         if self.__is_w_turn:
             if for_check:
                 if nm <= 5:
@@ -138,12 +147,12 @@ class Board(object):
             if for_check:
                 if nm >= 2:
                     if al != 0 and nm != 7:
-                        return self.__board_list[nm - 1][al - 1] == 'P' or \
-                               self.__board_list[nm - 1][al + 1] == 'P'
+                        return self.__board_list[nm - 1][al - 1] == 'p' or \
+                               self.__board_list[nm - 1][al + 1] == 'p'
                     if al == 0:
-                        return self.__board_list[nm - 1][al + 1] == 'P'
+                        return self.__board_list[nm - 1][al + 1] == 'p'
                     if nm == 7:
-                        return self.__board_list[nm - 1][al - 1] == 'P'
+                        return self.__board_list[nm - 1][al - 1] == 'p'
                 return False
             if nm == 3 and \
                     self.__board_list[1][al] == 'p' and \
@@ -159,8 +168,18 @@ class Board(object):
                 return True
         return False
 
-    def __rook_move(self, move, p, is_king=False, for_check=False):
+    def __rook_move(self, move, p, is_king=False,
+                    for_check=False, for_kill=False):
         al, nm = ord(move[0]) - 97, 8 - int(move[1])
+
+        if (for_kill and
+            not ((self.__is_w_turn and
+                  self.__board_list[nm][al].islower()) or
+                 ((not self.__is_w_turn) and
+                  self.__board_list[nm][al].isupper())) or
+            (not for_kill and
+             self.__board_list[nm][al] != '.')) and not for_check:
+            return False
 
         for idx in range(nm + 1, 8):  # find piece downwards
             if self.__board_list[idx][al] == p:
@@ -200,8 +219,18 @@ class Board(object):
 
         return False
 
-    def __bishop_move(self, move, p, is_king=False, for_check=False):
+    def __bishop_move(self, move, p, is_king=False,
+                      for_check=False, for_kill=False):
         al, nm = ord(move[0]) - 97, 8 - int(move[1])
+
+        if (for_kill and
+            not ((self.__is_w_turn and
+                  self.__board_list[nm][al].islower()) or
+                 ((not self.__is_w_turn) and
+                  self.__board_list[nm][al].isupper())) or
+            (not for_kill and
+             self.__board_list[nm][al] != '.')) and not for_check:
+            return False
 
         # find piece up left
         t_al, t_nm = al - 1, nm - 1
@@ -253,8 +282,18 @@ class Board(object):
             return True
         return False
 
-    def __knight_move(self, move, p, for_check=False):
+    def __knight_move(self, move, p, for_check=False, for_kill=False):
         al, nm = ord(move[0]) - 97, 8 - int(move[1])
+
+        if (for_kill and
+            not ((self.__is_w_turn and
+                  self.__board_list[nm][al].islower()) or
+                 ((not self.__is_w_turn) and
+                  self.__board_list[nm][al].isupper())) or
+            (not for_kill and
+             self.__board_list[nm][al] != '.')) and not for_check:
+            return False
+
         # up
         if nm - 2 >= 0:
             if al - 1 >= 0 and self.__board_list[nm - 2][al - 1] == p:
@@ -305,18 +344,18 @@ class Board(object):
                 return True
         return False
 
-    def __king_queen_move(self, move, p, for_check=False):
-        if self.__bishop_move(move, p, p.upper() == 'K', for_check):
+    def __king_queen_move(self, move, p, for_check=False, for_kill=False):
+        if self.__bishop_move(move, p, p.upper() == 'K', for_check, for_kill):
             return True
-        return self.__rook_move(move, p, p.upper() == 'K', for_check)
+        return self.__rook_move(move, p, p.upper() == 'K', for_check, for_kill)
 
     def __checked(self):
         position = self.__find_king()
         if self.__rook_move(position, 'R' if self.__is_w_turn else 'r',
-                            False, True):
+                            for_check=True):
             return True
         if self.__bishop_move(position, 'B' if self.__is_w_turn else 'b',
-                              False, True):
+                              for_check=True):
             return True
         if self.__knight_move(position, 'N' if self.__is_w_turn else 'n',
                               True):
@@ -340,3 +379,20 @@ class Board(object):
         is_still_checked = self.__checked()
         self.__is_w_turn = not self.__is_w_turn
         return is_still_checked
+
+    def __checkmate(self):
+        self.__is_w_turn = not self.__is_w_turn
+        # is_checkmate = len(self.find_all_moves()) == 0  # TODO: fix this
+        self.__is_w_turn = not self.__is_w_turn
+        return False
+
+    def find_all_moves(self):
+        all_moves = []
+        for num in range(8):
+            for al in range(8):
+                if self.__is_w_turn and self.__board_list[num][al].isupper():
+                    pass
+                elif (not self.__is_w_turn) and \
+                        self.__board_list[num][al].islower():
+                    pass
+        return all_moves

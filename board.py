@@ -69,7 +69,7 @@ class Board(object):
     def make_move(self, move: str):
         move_legal = False
         if move[0].islower():  # is definitely pawn
-            if self.__pawn_move(move):
+            if self.__pawn_move(move, for_kill='x' in move):
                 move_legal = True
             else:
                 print("Can't play that P")
@@ -116,11 +116,17 @@ class Board(object):
             self.__is_w_turn = not self.__is_w_turn
         return move_legal
 
-    def __pawn_move(self, move, for_check=False):
+    def __pawn_move(self, move, for_check=False, for_kill=False):
         al, nm = ord(move[2 if len(move) == 4 else 0]) - 97, \
                  8 - int(move[3 if len(move) == 4 else 1])
-        # TODO: start here, blocks covered when opposite king moves
         if self.__is_w_turn:
+            if for_kill:
+                if self.__board_list[nm][al].islower() and \
+                        self.__board_list[nm + 1][ord(move[0]) - 97] == 'P':
+                    self.__board_list[nm][al] = 'P'
+                    self.__board_list[nm + 1][ord(move[0]) - 97] = '.'
+                    return True
+                return False
             if for_check:
                 if nm <= 5:
                     if al != 0 and nm != 7:
@@ -144,6 +150,13 @@ class Board(object):
                 self.__board_list[nm][al] = 'P'
                 return True
         else:
+            if for_kill:
+                if self.__board_list[nm][al].isupper() and \
+                        self.__board_list[nm - 1][ord(move[0]) - 97] == 'p':
+                    self.__board_list[nm][al] = 'p'
+                    self.__board_list[nm - 1][ord(move[0]) - 97] = '.'
+                    return True
+                return False
             if for_check:
                 if nm >= 2:
                     if al != 0 and nm != 7:

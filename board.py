@@ -3,6 +3,7 @@ class Board(object):
         self.__fen: str = fen
         self.__board_list: list[list] = []
         self.__is_w_turn = self.__fen.split()[1] == 'w'
+        self.__can_castle = [True, True]  # TODO: fix this
         self.__put_fen_in_board_list(self.__fen.split()[0])
 
     def __put_fen_in_board_list(self, fen):
@@ -67,7 +68,10 @@ class Board(object):
         return counter
 
     def make_move(self, move: str, for_all_moves_checker=False) -> bool:
-        p = move[0] if self.__is_w_turn else move[0].lower()
+        if 'O' in move:
+            p = 'K'
+        else:
+            p = move[0] if self.__is_w_turn else move[0].lower()
         if move[0] == 'R':
             move_legal = self.__rook_move(move[2 if 'x' in move else 1:],
                                           p, 'x' in move)
@@ -77,7 +81,10 @@ class Board(object):
         elif move[0] == 'N':
             move_legal = self.__knight_move(move[2 if 'x' in move else 1:],
                                             p, 'x' in move)
-        elif move[0] in 'QK':
+        elif move[0] == 'Q':
+            move_legal = self.__king_queen_move(move[2 if 'x' in move else 1:],
+                                                p, 'x' in move)
+        elif move[0] == 'K':
             move_legal = self.__king_queen_move(move[2 if 'x' in move else 1:],
                                                 p, 'x' in move)
         else:
@@ -92,16 +99,28 @@ class Board(object):
             if for_all_moves_checker:
                 self.__put_fen_in_board_list(self.__fen.split()[0])
                 return True
+
+            # in the clear from here
+
+            if move[0] == 'K':
+                self.__can_castle[0 if self.__is_w_turn else 1] = False
             if self.__check_given():
-                print('Checked')
+                # print('{} Checked'.format('White' if not self.__is_w_turn
+                #                           else 'Black'))
+                pass
+
             self.__put_board_in_fen()
             self.__is_w_turn = not self.__is_w_turn
-            if self.__stalemate():
-                print("Stalemate!! It's a Draw")
+
+            if self.stalemate():
+                # print("Stalemate!! It's a Draw")
                 return True
-            if self.__checkmate():
-                print('Checkmate!! {} won'
-                      .format('White' if not self.__is_w_turn else 'Black'))
+
+            if self.checkmate():
+                # print('Checkmate!! {} won'
+                #       .format('White' if not self.__is_w_turn else 'Black'))
+                pass
+
         return move_legal
 
     def __pawn_move(self, move, p, for_kill, block=-1, to_move=True):
@@ -360,11 +379,11 @@ class Board(object):
                                     to_move=False)
         if 'a' not in position:
             return self.__pawn_move(position, 'P' if self.__is_w_turn else 'p',
-                                    for_kill=True, block=ord(position[0]) - 96,
+                                    for_kill=True, block=6,
                                     to_move=False)
         if 'h' not in position:
             return self.__pawn_move(position, 'P' if self.__is_w_turn else 'p',
-                                    for_kill=True, block=ord(position[0]) - 98,
+                                    for_kill=True, block=1,
                                     to_move=False)
 
         return False
@@ -379,16 +398,16 @@ class Board(object):
         return ''
 
     def __getting_checked(self):
-        self.__is_w_turn = not self.__is_w_turn
+        self.__is_w_turn = not self.__is_w_turn  # TODO: try to remove these
         got_checked = self.__check_given()
         self.__is_w_turn = not self.__is_w_turn
         return got_checked
 
-    def __checkmate(self):
-        return len(self.find_all_moves()) == 0
+    def checkmate(self):
+        return len(self.find_all_moves()) == 0  # TODO: add "check_given()"
 
-    def __stalemate(self):
-        return not self.__getting_checked() and self.__checkmate()
+    def stalemate(self):
+        return not self.__getting_checked() and len(self.find_all_moves()) == 0
 
     def find_all_moves(self):
         pieces = 'RBNQK'

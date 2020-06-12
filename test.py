@@ -13,6 +13,8 @@ class Test(object):
         self.checkmate_test2()
         print()
         self.stalemate_test1()
+        print()
+        self.pawn_cross_test1()
 
     def checkmate_test1(self):
         results = []
@@ -47,6 +49,15 @@ class Test(object):
         results.append(board.make_move('Qg6'))
         results.append(board.stalemate())
         print("Stalemate Test1 = {}".format(all(results)))
+
+    def pawn_cross_test1(self):
+        results = []
+        board = Board(self.__all_fens[3])
+        results.append(board.make_move('d4'))
+        results.append(board.make_move('e5'))
+        results.append(not board.make_move('fxe5'))
+        results.append(board.make_move('dxe5'))
+        print("Pawn Cross kill Test1 = {}".format(all(results)))
 
 
 test = Test()

@@ -69,10 +69,13 @@ class Board(object):
 
     def make_move(self, move: str, for_all_moves_checker=False) -> bool:
         if 'O' in move:
-            p = 'K'
+            p = 'C'
         else:
             p = move[0] if self.__is_w_turn else move[0].lower()
-        if move[0] == 'R':
+        if p == 'C':
+            move_legal = False
+            # castling
+        elif move[0] == 'R':
             move_legal = self.__rook_move(move[2 if 'x' in move else 1:],
                                           p, 'x' in move)
         elif move[0] == 'B':
@@ -104,10 +107,8 @@ class Board(object):
 
             if move[0] == 'K':
                 self.__can_castle[0 if self.__is_w_turn else 1] = False
-            if self.__check_given():
-                # print('{} Checked'.format('White' if not self.__is_w_turn
-                #                           else 'Black'))
-                pass
+
+            checked = self.__is_check_given()
 
             self.__put_board_in_fen()
             self.__is_w_turn = not self.__is_w_turn
@@ -115,11 +116,15 @@ class Board(object):
             if self.stalemate():
                 # print("Stalemate!! It's a Draw")
                 return True
-
-            if self.checkmate():
-                # print('Checkmate!! {} won'
-                #       .format('White' if not self.__is_w_turn else 'Black'))
-                pass
+            if checked:
+                if self.checkmate():
+                    # print('Checkmate!! {} won'
+                    #       .format('White' if not self.__is_w_turn else 'Black'))
+                    pass
+                else:
+                    # print('{} Checked'.format('White' if self.__is_w_turn
+                    #                           else 'Black'))
+                    pass
 
         return move_legal
 
@@ -189,37 +194,25 @@ class Board(object):
             return False
 
         for idx in range(nm + 1, 8):  # find piece downwards
-            if self.__board_list[idx][al] == p:
-                if to_move:
-                    self.__board_list[idx][al] = '.'
-                    self.__board_list[nm][al] = p
+            if self.__helper(idx, al, nm, al, p, to_move):
                 return True
             if self.__board_list[idx][al] != '.' or is_king:
                 break
 
         for idx in range(nm - 1, -1, -1):  # find piece upwards
-            if self.__board_list[idx][al] == p:
-                if to_move:
-                    self.__board_list[idx][al] = '.'
-                    self.__board_list[nm][al] = p
+            if self.__helper(idx, al, nm, al, p, to_move):
                 return True
             if self.__board_list[idx][al] != '.' or is_king:
                 break
 
         for idx in range(al - 1, -1, -1):  # find piece leftwards
-            if self.__board_list[nm][idx] == p:
-                if to_move:
-                    self.__board_list[nm][idx] = '.'
-                    self.__board_list[nm][al] = p
+            if self.__helper(nm, idx, nm, al, p, to_move):
                 return True
             if self.__board_list[nm][idx] != '.' or is_king:
                 break
 
         for idx in range(al + 1, 8):  # find piece rightwards
-            if self.__board_list[nm][idx] == p:
-                if to_move:
-                    self.__board_list[nm][idx] = '.'
-                    self.__board_list[nm][al] = p
+            if self.__helper(nm, idx, nm, al, p, to_move):
                 return True
             if self.__board_list[nm][idx] != '.' or is_king:
                 break
@@ -240,7 +233,7 @@ class Board(object):
         # find piece up left
         t_al, t_nm = al - 1, nm - 1
         while t_al >= 0 and t_nm >= 0:
-            if self.__helper(al, nm, t_al, t_nm, p, to_move):
+            if self.__helper(t_nm, t_al, nm, al, p, to_move):
                 return True
             if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
@@ -250,7 +243,7 @@ class Board(object):
         # find piece up right
         t_al, t_nm = al + 1, nm - 1
         while t_al <= 7 and t_nm >= 0:
-            if self.__helper(al, nm, t_al, t_nm, p, to_move):
+            if self.__helper(t_nm, t_al, nm, al, p, to_move):
                 return True
             if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
@@ -260,7 +253,7 @@ class Board(object):
         # find piece down right
         t_al, t_nm = al + 1, nm + 1
         while t_al <= 7 and t_nm <= 7:
-            if self.__helper(al, nm, t_al, t_nm, p, to_move):
+            if self.__helper(t_nm, t_al, nm, al, p, to_move):
                 return True
             if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
@@ -270,7 +263,7 @@ class Board(object):
         # find piece down left
         t_al, t_nm = al - 1, nm + 1
         while t_al >= 0 and t_nm <= 7:
-            if self.__helper(al, nm, t_al, t_nm, p, to_move):
+            if self.__helper(t_nm, t_al, nm, al, p, to_move):
                 return True
             if self.__board_list[t_nm][t_al] != '.' or is_king:
                 break
@@ -278,11 +271,11 @@ class Board(object):
             t_nm += 1
         return False
 
-    def __helper(self, to_al, to_nm, from_al, from_nm, p, to_move=True):
+    def __helper(self, from_nm, from_al, to_nm, to_al, p, to_move=True):
         if self.__board_list[from_nm][from_al] == p:
             if to_move:
-                self.__board_list[to_nm][to_al] = p
                 self.__board_list[from_nm][from_al] = '.'
+                self.__board_list[to_nm][to_al] = p
             return True
         return False
 
@@ -352,8 +345,17 @@ class Board(object):
             return True
         return self.__rook_move(move, p, for_kill, p.upper() == 'K', to_move)
 
-    def __check_given(self):
-        position = self.__find_king()  # finds white's king if blacks move
+    def __is_check_given(self):
+        def find_king():
+            k = 'k' if self.__is_w_turn else 'K'
+
+            for num in range(8):
+                for al in range(8):
+                    if k == self.__board_list[num][al]:
+                        return '{}{}'.format(chr(al + 97), 8 - num)
+            return ''
+
+        position = find_king()  # finds white's king if blacks move
         if self.__rook_move(position, 'R' if self.__is_w_turn else 'r',
                             for_kill=True, is_king=False, to_move=False):
             return True
@@ -388,23 +390,14 @@ class Board(object):
 
         return False
 
-    def __find_king(self):
-        k = 'k' if self.__is_w_turn else 'K'
-
-        for num in range(8):
-            for al in range(8):
-                if k == self.__board_list[num][al]:
-                    return '{}{}'.format(chr(al + 97), 8 - num)
-        return ''
-
     def __getting_checked(self):
-        self.__is_w_turn = not self.__is_w_turn  # TODO: try to remove these
-        got_checked = self.__check_given()
+        self.__is_w_turn = not self.__is_w_turn
+        got_checked = self.__is_check_given()
         self.__is_w_turn = not self.__is_w_turn
         return got_checked
 
     def checkmate(self):
-        return len(self.find_all_moves()) == 0  # TODO: add "check_given()"
+        return len(self.find_all_moves()) == 0
 
     def stalemate(self):
         return not self.__getting_checked() and len(self.find_all_moves()) == 0
@@ -424,7 +417,7 @@ class Board(object):
                                                      8 - num)
                             if self.make_move(move, True):
                                 all_moves.append(move)
-                        if num >= 6:  # don't remove this
+                        if num >= 6:
                             continue
                         if 0 < al < 7 and self.__board_list[num][al].islower():
                             moves = '{}x{}{}'.format(chr(97 + al - 1),
@@ -457,7 +450,7 @@ class Board(object):
                                                      8 - num)
                             if self.make_move(move, True):
                                 all_moves.append(move)
-                        if num <= 1:  # don't remove this
+                        if num <= 1:
                             continue
                         if 0 < al < 7 and self.__board_list[num][al].isupper():
                             moves = '{}x{}{}'.format(chr(97 + al - 1),

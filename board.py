@@ -76,7 +76,6 @@ class Board(object):
 
         if p == 'C':
             move_legal = self.__can_castle(move, not for_all_moves_checker)
-            # castling
         elif move[0] == 'R':
             move_legal = self.__rook_move(move[2 if 'x' in move else 1:],
                                           p, 'x' in move)
@@ -98,7 +97,7 @@ class Board(object):
                                           'x' in move,
                                           block=ord(move[0]) - 97)
         if move_legal:
-            if self.__getting_checked():
+            if self.__is_getting_checked():
                 self.__put_fen_in_board_list(self.__fen.split()[0])
                 return False
             if for_all_moves_checker:
@@ -135,14 +134,14 @@ class Board(object):
     def __check_in_castle_moves(self, queenside: bool) -> bool:
         nm = 7 if self.__is_w_turn else 0
         al = 4
-        for idx in range(al,
-                         (al - 3) if queenside else (al + 3),
+        for idx in range(al, (al - 3) if queenside else (al + 3),
                          -1 if queenside else 1):
-            self.__board_list[nm][idx - 1] = self.__board_list[nm][idx]
+            self.__board_list[nm][idx + 1] = self.__board_list[nm][idx]
             self.__board_list[nm][idx] = '.'
-            if self.__getting_checked():
+
+            if self.__is_getting_checked():
                 self.__board_list[nm][al] = 'K' if self.__is_w_turn else 'k'
-                self.__board_list[nm][idx - 1] = '.'
+                self.__board_list[nm][idx + 1] = '.'
                 return True
 
         self.__board_list[nm][al] = 'K' if self.__is_w_turn else 'k'
@@ -150,43 +149,56 @@ class Board(object):
         return False
 
     def __can_castle(self, move, to_move=False):
+        def __no_pieces(al, nm) -> bool:
+            for idx in range(al, al + (3 if al == 1 else 2)):
+                if self.__board_list[nm][idx] != '.':
+                    return False
+            return True
+
         if move == 'O-O':
             if self.__is_w_turn:
-                if not self.__can_w_castle[0] or not self.__no_pieces(5, 7):
+                if not self.__can_w_castle[0] or not __no_pieces(5, 7):
                     return False
             else:
-                if not self.__can_b_castle[0] or not self.__no_pieces(5, 0):
+                if not self.__can_b_castle[0] or not __no_pieces(5, 0):
                     return False
-
-            if self.__check_in_castle_moves(False):
-                return False
-            if to_move:
-                self.__castle(7 if self.__is_w_turn else 0, False)
 
         elif move == 'O-O-O':
             if self.__is_w_turn:
-                if not self.__can_w_castle[1] or not self.__no_pieces(1, 7):
+                if not self.__can_w_castle[1] or not __no_pieces(1, 7):
                     return False
             else:
-                if not self.__can_b_castle[1] or not self.__no_pieces(1, 0):
+                if not self.__can_b_castle[1] or not __no_pieces(1, 0):
                     return False
-
-            if self.__check_in_castle_moves(False):
-                return False
-            if to_move:
-                self.__castle(7 if self.__is_w_turn else 0, True)
 
         else:
             return False
+
+        if self.__check_in_castle_moves(move.count('O') == 3):
+            return False
+        if to_move:
+            self.__castle(move.count('O') == 3)
+
         return True
 
-    def __castle(self, nm, queenside: bool):
+    def __castle(self, queenside: bool):
         if self.__is_w_turn:
             self.__can_w_castle = [False, False]
+            nm = 7
         else:
             self.__can_b_castle = [False, False]
+            nm = 0
 
-        # nm and queenside
+        if queenside:
+            self.__board_list[nm][2] = 'K' if self.__is_w_turn else 'k'
+            self.__board_list[nm][3] = 'R' if self.__is_w_turn else 'r'
+            self.__board_list[nm][0] = '.'
+        else:
+            self.__board_list[nm][6] = 'K' if self.__is_w_turn else 'k'
+            self.__board_list[nm][5] = 'R' if self.__is_w_turn else 'r'
+            self.__board_list[nm][7] = '.'
+
+        self.__board_list[nm][4] = '.'
 
     def __pawn_move(self, move, p, for_kill, block=-1, to_move=True):
         al, nm = ord(move[0]) - 97, 8 - int(move[1])
@@ -465,7 +477,7 @@ class Board(object):
 
         return False
 
-    def __getting_checked(self):
+    def __is_getting_checked(self):
         self.__is_w_turn = not self.__is_w_turn
         got_checked = self.__is_check_given()
         self.__is_w_turn = not self.__is_w_turn
@@ -475,9 +487,10 @@ class Board(object):
         return len(self.find_all_moves()) == 0
 
     def stalemate(self):
-        return not self.__getting_checked() and len(self.find_all_moves()) == 0
+        return not self.__is_getting_checked() and \
+               len(self.find_all_moves()) == 0
 
-    def find_all_moves(self):
+    def find_all_moves(self):  # TODO: add castling here
         pieces = 'RBNQK'
         all_moves = []
         for num in range(8):
@@ -549,9 +562,3 @@ class Board(object):
                             if self.make_move(move, True):
                                 all_moves.append(move)
         return all_moves
-
-    def __no_pieces(self, al, nm) -> bool:
-        for idx in range(al, al + (3 if al == 1 else 2)):
-            if self.__board_list[nm][idx] != '.':
-                return False
-        return True

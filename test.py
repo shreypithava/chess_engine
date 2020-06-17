@@ -11,10 +11,12 @@ class Test(object):
     def run_all_tests(self):
         self.checkmate_test1()
         self.checkmate_test2()
-        print()
         self.stalemate_test1()
-        print()
         self.pawn_cross_test1()
+        self.castling_test1()
+        self.castling_test2()
+        self.castling_test3()
+        self.castling_test4()
 
     def checkmate_test1(self):
         results = []
@@ -57,7 +59,35 @@ class Test(object):
         results.append(board.make_move('e5'))
         results.append(not board.make_move('fxe5'))
         results.append(board.make_move('dxe5'))
-        print("Pawn Cross kill Test1 = {}".format(all(results)))
+        print("Pawn Crosskill Test1 = {}".format(all(results)))
+
+    def castling_test1(self):
+        results = []
+        board = Board(self.__all_fens[4])
+        results.append(board.make_move('O-O'))
+        print("Castling Test1 = {}".format(all(results)))
+
+    def castling_test2(self):
+        results = []
+        board = Board(self.__all_fens[4])
+        results.append(not board.make_move('O-O-O'))
+        print("Castling Test2 = {}".format(all(results)))
+
+    def castling_test3(self):
+        results = []
+        board = Board(self.__all_fens[5])
+        results.append(not board.make_move('O-O'))
+        results.append(board.make_move('Qxf3'))
+        print("Castling Test3 = {}".format(all(results)))
+
+    def castling_test4(self):
+        results = []
+        board = Board(self.__all_fens[6])
+        results.append(not board.make_move('O-O'))
+        results.append(not board.make_move('Qxf3'))
+        results.append(not board.make_move('Kf1'))
+        results.append(board.make_move('hxg3'))
+        print("Castling Test4 = {}".format(all(results)))
 
 
 test = Test()

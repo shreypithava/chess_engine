@@ -17,6 +17,8 @@ class Test(object):
         self.castling_test2()
         self.castling_test3()
         self.castling_test4()
+        self.all_moves_checker_test1()
+        self.all_moves_checker_test2()
 
     def checkmate_test1(self):
         results = []
@@ -88,6 +90,18 @@ class Test(object):
         results.append(not board.make_move('Kf1'))
         results.append(board.make_move('hxg3'))
         print("Castling Test4 = {}".format(all(results)))
+
+    def all_moves_checker_test1(self):
+        results = []
+        board = Board(self.__all_fens[7])
+        results.append(len(board.find_all_moves()) == 20)
+        print("All Moves Checker Test1 = {}".format(all(results)))
+
+    def all_moves_checker_test2(self):
+        results = []
+        board = Board(self.__all_fens[8])
+        results.append(len(board.find_all_moves()) == 24)
+        print("All Moves Checker Test2 = {}".format(all(results)))
 
 
 test = Test()
